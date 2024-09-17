@@ -5,12 +5,12 @@ apply plugin: 'com.google.gms.google-services'
 
 android {
     compileSdkVersion 30
-//    viewBinding {
-//        enabled = true
-//    }
+    buildFeatures {
+        viewBinding = true
+    }
     defaultConfig {
         applicationId "com.example.summarization"
-        minSdkVersion 19
+        minSdkVersion 21
         targetSdkVersion 30
         versionCode 1
         versionName "1.0"
@@ -35,8 +35,10 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.1'
     //image picker
-    implementation 'com.github.dhaval2404:imagepicker:1.7.5'
-    implementation 'org.apache.pdfbox:pdfbox:2.0.32'
+    implementation 'com.github.dhaval2404:imagepicker:2.1'
+    implementation 'com.google.mlkit:text-recognition:18.0.0'
+
+//    implementation 'org.apache.pdfbox:pdfbox:2.0.32'
 
     //Text Recognisation
     implementation 'com.google.android.gms:play-services-mlkit-text-recognition:16.1.1'

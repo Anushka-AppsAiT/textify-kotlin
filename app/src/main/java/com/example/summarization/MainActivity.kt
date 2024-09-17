@@ -1,26 +1,24 @@
-//package com.example.summarization
-//import java.io.IOException
-//import com.example.summarization.databinding.ActivityMainBinding
-
-import android.app.Activity
+import android.graphics.Bitmap
+import android.graphics.pdf.PdfRenderer
+import android.os.ParcelFileDescriptor
 import android.content.Intent
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
-
+import android.app.Activity
 import android.os.Bundle
-import android.text.TextUtils
 import android.util.Log
 import android.view.View
-import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import com.example.summarization.databinding.ActivityMainBinding
 import com.github.dhaval2404.imagepicker.ImagePicker
 import com.google.mlkit.vision.common.InputImage
-
 import com.google.mlkit.vision.text.TextRecognition
-import kotlinx.android.synthetic.main.activity_main.*
+import com.google.mlkit.vision.text.TextRecognizerOptions
+import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
-
-import org.apache.pdfbox.pdmodel.PDDocument
-import org.apache.pdfbox.rendering.PDFRenderer
+import com.example.summarization.R
+//import com.google.mlkit.vision.text.TextRecognition
+import java.io.InputStream
 
 class MainActivity : AppCompatActivity() {
 
@@ -31,21 +29,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private lateinit var image: InputImage
+    private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         setListener()
     }
 
     fun setListener() {
-        rl_select_img.setOnClickListener {
+        binding.rlSelectImg.setOnClickListener {
             openImagePicker() // Existing logic for selecting image
         }
 
-        rl_select_pdf.setOnClickListener {
+        binding.rlSelectPdf.setOnClickListener {
             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
             intent.addCategory(Intent.CATEGORY_OPENABLE)
             intent.type = "application/pdf"
@@ -98,7 +97,7 @@ class MainActivity : AppCompatActivity() {
                     val resultText = visionText.text
                     Log.d(TAG, "processImage: extractedText: $resultText")
 
-                    if (TextUtils.isEmpty(resultText)) {
+                    if (resultText.isEmpty()) {
                         binding.progressBar.visibility = View.GONE
                         binding.tvConvertedText.text = resources.getString(R.string.no_text_found)
                     } else {
@@ -115,32 +114,54 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun convertPdfToImages(pdfUri: Uri) {
-        val pdfDocument = PDDocument.load(contentResolver.openInputStream(pdfUri))
-        val pdfRenderer = PDFRenderer(pdfDocument)
+        try {
+            // Open the PDF as a ParcelFileDescriptor
+            val input = contentResolver.openFileDescriptor(pdfUri, "r") ?: return
+            val pdfRenderer = PdfRenderer(input)
 
-        val totalPages = pdfDocument.numberOfPages
-        val extractedImages = mutableListOf<Uri>()
+            // List to hold rendered images
+            val extractedImages = mutableListOf<Uri>()
 
-        for (pageIndex in 0 until totalPages) {
-            val image = pdfRenderer.renderImage(pageIndex)
-            val tempFile = File.createTempFile("pdf_page_${pageIndex}", ".jpg")
-            FileOutputStream(tempFile).use { fos ->
-                image.writeJPEG(fos, 100)
+            // Loop through each page of the PDF
+            val totalPages = pdfRenderer.pageCount
+            for (pageIndex in 0 until totalPages) {
+                val page = pdfRenderer.openPage(pageIndex)
+
+                // Create a bitmap for the page image
+                val bitmap = Bitmap.createBitmap(
+                    page.width,
+                    page.height,
+                    Bitmap.Config.ARGB_8888
+                )
+
+                // Render the page onto the bitmap
+                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                page.close()
+
+                // Save bitmap to a temp file and add its URI to the list
+                val tempFile = File.createTempFile("pdf_page_${pageIndex}", ".jpg")
+                FileOutputStream(tempFile).use { fos ->
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos)
+                }
+                extractedImages.add(Uri.fromFile(tempFile))
             }
-            extractedImages.add(Uri.fromFile(tempFile))
-        }
 
-        pdfDocument.close()
+            pdfRenderer.close()
+            input.close()
 
-        // Process each extracted image
-        for (imageUri in extractedImages) {
-            processImage(imageUri)
-        }
+            // Process each extracted image
+            for (imageUri in extractedImages) {
+                processImage(imageUri)
+            }
 
-        // Display the last page image (optional)
-        val lastPageImageUri = extractedImages.lastOrNull()
-        if (lastPageImageUri != null) {
-            iv_selected_img.setImageURI(lastPageImageUri)
+            // Optionally display the last page image
+            val lastPageImageUri = extractedImages.lastOrNull()
+            if (lastPageImageUri != null) {
+                binding.ivSelectedImg.setImageURI(lastPageImageUri)
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+            Log.e(TAG, "Error rendering PDF: ${e.message}")
         }
     }
 
