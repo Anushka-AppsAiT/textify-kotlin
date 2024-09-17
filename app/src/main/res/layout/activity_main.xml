@@ -104,8 +104,8 @@
         app:layout_constraintTop_toTopOf="parent"/>
 
     <RelativeLayout
-        android:id="@+id/rl_select_img"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:id="@+id/rl_select_pdf"
+        app:layout_constraintBottom_toTopOf="@id/rl_select_img"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         android:background="@drawable/circle_filled"
@@ -117,8 +117,9 @@
         <ImageView
             android:layout_width="@dimen/dimen_25dp"
             android:layout_height="@dimen/dimen_25dp"
-            android:src="@drawable/ic_plus"/>
+            android:src="@drawable/ic_pdf" />
     </RelativeLayout>
+
 
     <View
         android:id="@+id/view"
@@ -130,4 +131,3 @@
         app:layout_constraintEnd_toEndOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
-

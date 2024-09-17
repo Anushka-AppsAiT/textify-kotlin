@@ -36,7 +36,7 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.0.1'
     //image picker
     implementation 'com.github.dhaval2404:imagepicker:1.7.5'
-//    implementation 'org.apache.pdfbox:pdfbox:2.0.32'
+    implementation 'org.apache.pdfbox:pdfbox:2.0.32'
 
     //Text Recognisation
     implementation 'com.google.android.gms:play-services-mlkit-text-recognition:16.1.1'
